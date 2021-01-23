@@ -21,10 +21,7 @@ namespace fragmentDiscordPresence
                 var cleanedString = result.Split(new string[] { "\0" }, StringSplitOptions.None);
                 return cleanedString[0].Replace(',', ' ');
             }
-            else
-            {
-                return "";
-            }
+            return "";
         }
 
         /// <summary>

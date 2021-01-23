@@ -46,18 +46,15 @@ namespace fragmentDiscordPresence
         private void tmr_PCSX2Check_Tick(object sender, EventArgs e)
         {
             Process[] pcsx2 = Process.GetProcessesByName(PCSX2PROCESSNAME);
+            lbl_PCSX2.Text = "Waiting for PCSX2...";
+            lbl_PCSX2.ForeColor = Color.FromArgb(120, 120, 120);
+            pcsx2Running = false;
 
             if (pcsx2.Length > 0)
             {
                 lbl_PCSX2.Text = "PCSX2 Detected";
                 lbl_PCSX2.ForeColor = Color.FromArgb(20, 192, 90);
                 pcsx2Running = true;
-            }
-            else
-            {
-                lbl_PCSX2.Text = "Waiting for PCSX2...";
-                lbl_PCSX2.ForeColor = Color.FromArgb(120, 120, 120);
-                pcsx2Running = false;
             }
         }
 
@@ -146,27 +143,21 @@ namespace fragmentDiscordPresence
         }
         private void setPresence(string serverName, string word1, string word2, string word3, int playerCount,string zone)
         {
+            
+            presence.State = "Not currently in an area.";
+            presence.Details = "Not currently in a server.";
             //Only checking the first word. If this isn't set then it's save to assume that we weren't in a zone
-            if(word1 =="")
-            {
-                presence.State = "Not currently in an area.";
-            }
-            else
+            if (word1 !="")
             {
                 presence.State = "Area: " + word1 + " " + word2 + " " + word3;
             }
            
-            if(serverName == "")
-            {
-                presence.Details = "Not currently in a server.";
-            }
-            else
+            if(serverName != "")
             {
                 presence.Details = "Area Server: " + serverName;
             }
 
-            presence.Assets = new Assets();
-      
+            presence.Assets = new Assets();    
             presence.Assets.LargeImageKey = zone;
             presence.Assets.SmallImageKey = zone;         
 
