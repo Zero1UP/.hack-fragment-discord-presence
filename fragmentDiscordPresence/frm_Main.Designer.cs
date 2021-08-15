@@ -29,15 +29,9 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.tmr_PCSX2Check = new System.Windows.Forms.Timer(this.components);
             this.tmr_GameData = new System.Windows.Forms.Timer(this.components);
             this.lbl_PCSX2 = new System.Windows.Forms.Label();
             this.SuspendLayout();
-            // 
-            // tmr_PCSX2Check
-            // 
-            this.tmr_PCSX2Check.Enabled = true;
-            this.tmr_PCSX2Check.Tick += new System.EventHandler(this.tmr_PCSX2Check_Tick);
             // 
             // tmr_GameData
             // 
@@ -66,6 +60,7 @@
             this.MinimumSize = new System.Drawing.Size(237, 74);
             this.Name = "frm_Main";
             this.Text = "Fragment";
+            this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.frm_Main_FormClosed);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -73,8 +68,6 @@
         }
 
         #endregion
-
-        private System.Windows.Forms.Timer tmr_PCSX2Check;
         private System.Windows.Forms.Timer tmr_GameData;
         private System.Windows.Forms.Label lbl_PCSX2;
     }
