@@ -1,0 +1,37 @@
+name: Build Artifact
+
+on:
+  push:
+    branches: [ master]
+  pull_request:
+    branches: [ master]
+
+jobs:
+  build:
+
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build Project win-x64
+        run: dotnet publish -r win-x64 -p:PublishSingleFile=true  /p:DebugType=None --self-contained true -c Release -o out/win-x64
+        
+        #- name: Build Project win-x86
+        #  run: dotnet publish -r win-x86 -p:PublishSingleFile=true  /p:DebugType=None --self-contained true -c Release -o out/win-x86
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v2.2.2
+        with:
+          # Artifact name
+          name: fragment-discord-presence-release.zip # optional, default is artifact
+          # A file, directory or wildcard pattern that describes what to upload
+          path: ${{github.workspace}}/out/win-x64
+      
