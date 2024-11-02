@@ -42,31 +42,29 @@ namespace fragmentDiscordPresence
         {
             try
             {
-                Process pcsx2 = Process.GetProcesses().First(p => p.ProcessName.StartsWith(PCSX2PROCESSNAME));
-                long pcsx2Offset = GameHelper.GetPcsx2Offset(pcsx2);
-                IntPtr pcsx2Intptr = new IntPtr(pcsx2Offset);
-                
+                Process pcsx2 = Process.GetProcesses().First(p => p.ProcessName.StartsWith(PCSX2PROCESSNAME));             
                 mem = new MemorySharp(pcsx2);
+                var baseAddress = GameHelper.GetPcsx2Offset(pcsx2, mem);
                 string areaWord1 = "";
                 string areaWord2 = "";
                 string areaWord3 = "";
 
                 if (mem.IsRunning)
                 {
-                    if (mem.Read<byte>(IntPtr.Add(pcsx2Intptr,GameHelper.CONNECTED_TO_AS_ADDRESS), 4, false).First() == 0x01)
+                    if (mem.Read<byte>(IntPtr.Add(baseAddress, GameHelper.CONNECTED_TO_AS_ADDRESS), 4, false).First() == 0x01)
                     {
 
                         //Get party count
                         //Not really useful right now since I can't seem to get this to display
-                        int partyCount = mem.Read<byte>(IntPtr.Add(pcsx2Intptr,GameHelper.PARTY_COUNT_ADDRESS), false);
+                        int partyCount = mem.Read<byte>(IntPtr.Add(baseAddress, GameHelper.PARTY_COUNT_ADDRESS), false);
 
                         //Get the server name
-                        string serverName = ByteConverstionHelper.converyBytesToSJIS(mem.Read<byte>(IntPtr.Add(pcsx2Intptr,GameHelper.SERVER_NAME_ADDRESS), 20, false));
+                        string serverName = ByteConverstionHelper.converyBytesToSJIS(mem.Read<byte>(IntPtr.Add(baseAddress, GameHelper.SERVER_NAME_ADDRESS), 20, false));
 
                         //Get the town you are in.
                         //This address actually shows the current zone ccs file. So when you zone into an area this will update to that zone's CCS file
                         //Could be useful to display the area you are in but using the default assets wouldn't be telling of where the player actually is.
-                        string townFileName = mem.ReadString(IntPtr.Add(pcsx2Intptr,GameHelper.ZONE_CCS_FILE_LOADED),Encoding.Default,false,12).Split('.')[0].ToLower();
+                        string townFileName = mem.ReadString(IntPtr.Add(baseAddress, GameHelper.ZONE_CCS_FILE_LOADED), Encoding.Default, false, 12).Split('.')[0].ToLower();
 
                         //Don't want the timer to continue if the player is just sitting in town.
                         if (townFileName.ToLower().Contains("town"))
@@ -75,33 +73,32 @@ namespace fragmentDiscordPresence
                             {
                                 Start = null
 
-                            };                       
+                            };
                             sessionStarted = false;
                         }
 
                         //Check to see if we are in a zone. (Could technically use townFileName, but I haven't done extensive testing with that to see if it is
                         // always a zone file name that is loaded there.)
 
-                        if (mem.Read<byte>(IntPtr.Add(pcsx2Intptr,GameHelper.IN_AREA_ADDRESS), 4, false).First() == 0x01)
+                        if (mem.Read<byte>(IntPtr.Add(baseAddress, GameHelper.IN_AREA_ADDRESS), 4, false).First() == 0x01)
                         {
                             //Get the pointer addresses and add their offsets to them
-                            IntPtr areawordPointerAddress =
-                                new IntPtr(mem.Read<int>(IntPtr.Add(pcsx2Intptr, GameHelper.AREA_WORD_POINTER), false) +
-                                           pcsx2Offset);
-                            IntPtr areaword1Pointer =
-                                new IntPtr(mem.Read<int>(
-                                    areawordPointerAddress + GameHelper.AREA_WORD_ONE_POINTER_OFFSET, false) + pcsx2Offset);
-                            IntPtr areaWord2Pointer =
-                                new IntPtr(mem.Read<int>(
-                                    areawordPointerAddress + GameHelper.AREA_WORD_TWO_POINTER_OFFSET, false) + pcsx2Offset);
-                            IntPtr areaWord3Pointer =
-                                new IntPtr(mem.Read<int>(
-                                    areawordPointerAddress + GameHelper.AREA_WORD_THREE_POINTER_OFFSET, false) + pcsx2Offset);
+                            int areawordPointerAddress =
+                               (mem.Read<int>(IntPtr.Add(baseAddress, GameHelper.AREA_WORD_POINTER), false));
+                            int areaword1Pointer =
+                                (mem.Read<int>(IntPtr.Add(baseAddress,
+                                    areawordPointerAddress + GameHelper.AREA_WORD_ONE_POINTER_OFFSET), false));
+                            int areaWord2Pointer =
+                                (mem.Read<int>(IntPtr.Add(baseAddress,
+                                    areawordPointerAddress + GameHelper.AREA_WORD_TWO_POINTER_OFFSET), false));
+                            int areaWord3Pointer =
+                               (mem.Read<int>(IntPtr.Add(baseAddress,
+                                    areawordPointerAddress + GameHelper.AREA_WORD_THREE_POINTER_OFFSET), false));
 
                             //Get the keywords.
-                            areaWord1 = ByteConverstionHelper.converyBytesToSJIS(mem.Read<byte>(areaword1Pointer, 12, false)).Substring(4);
-                            areaWord2 = ByteConverstionHelper.converyBytesToSJIS(mem.Read<byte>(areaWord2Pointer, 12, false)).Substring(4);
-                            areaWord3 = ByteConverstionHelper.converyBytesToSJIS(mem.Read<byte>(areaWord3Pointer, 12, false)).Substring(4);
+                            areaWord1 = ByteConverstionHelper.converyBytesToSJIS(mem.Read<byte>(IntPtr.Add(baseAddress, areaword1Pointer), 12, false)).Substring(4);
+                            areaWord2 = ByteConverstionHelper.converyBytesToSJIS(mem.Read<byte>(IntPtr.Add(baseAddress, areaWord2Pointer), 12, false)).Substring(4);
+                            areaWord3 = ByteConverstionHelper.converyBytesToSJIS(mem.Read<byte>(IntPtr.Add(baseAddress, areaWord3Pointer), 12, false)).Substring(4);
                             townFileName = "default";
                             //Check to see if the game is started (if the player is in a zone) so the timer won't constantly reset
                             if (!sessionStarted)
@@ -117,14 +114,17 @@ namespace fragmentDiscordPresence
                         }
                         setPresence(serverName, areaWord1, areaWord2, areaWord3, partyCount, townFileName);
                     }
+                    else
+                    {
+                        client.SetPresence(defaultPresence);
+                        sessionStarted = false;
+                    }
                 }
                 else
                 {
                     client.SetPresence(defaultPresence);
                     sessionStarted = false;
                 }
-
-
             }
             catch (Exception)
             {
@@ -141,8 +141,7 @@ namespace fragmentDiscordPresence
             //Used to display the area words however since adding the party count's they end up not showing because the world list was too long.
             if (word1 !="")
             {
-                presence.State = "Currently in field.";
-                // "Area: " + word1 + " " + word2 + " " + word3;
+                presence.State = "Area: " + word1 + " " + word2 + " " + word3;
             }
 
             presence.Assets = new Assets();    
